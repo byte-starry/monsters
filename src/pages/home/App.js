@@ -1,44 +1,71 @@
 // Importing Child Components Search, CardList
 import CardList from '../../components/card-list/card-list.component';
 import Search from '../../components/search/search.component';
+// 
+import {connect} from 'react-redux'
+import {getUsers, searchUser} from '../../redux/user/user.action'
 
 // App Styles
 import './App.css'
 import React from 'react'
 
+import axios from 'axios'
+
+// Parent Component
 class App extends React.Component{
- /**Step 1 */
- constructor(){
-    super()
-    this.state = {
-      users: []
-    }
-  }
-  /**Step 4 */
+
   componentDidMount(){
-    fetch('https://jsonplaceholder.typicode.com/users')
-    /** return result => result.json() => Array[] */
-    .then(result =>result.json())
-    /** return Array[] => this.state = {users:monsters} **/
-    .then(monsters => this.setState(
-          {
-            users:monsters
-          }
-        )
-    )
+    const {sendMonsters} = this.props
+
+    axios.get('https://jsonplaceholder.typicode.com/users')
+    .then(response => sendMonsters(response.data))
+    // .then(response => sendMonsters([{},{}]))
+    // .then(response => sendMonsters(monsters))
   }
 
-  /**Step 2 */
+  // for Onchange Function in Search
+  handleOnChange = (event) => {
+    const {sendSearchValue} = this.props
+    sendSearchValue(event.target.value)
+  }
+  
   render(){
-    /**Step 3 */
+    const {getMonsters,getSearchValue} = this.props
+    const filteredMonsters = getMonsters.filter(
+      monster => monster.name.toLowerCase().includes(getSearchValue.toLowerCase())
+    )
     return(
       <div className="App">
         <h1>Monsters Rollodex</h1>
-        <Search />
-        <CardList monsters={this.state.users}/>
+        <Search changing = {this.handleOnChange}/>
+        <CardList monsters={filteredMonsters}/>
       </div>
     )
   }
 }
 
-export default App
+// Fetch the state/data from the store
+// we need a function called mapStateToProps inside 
+// your connect method that connects the data from 
+// react component to redux store
+const mapStateToProps = (state) => (
+  {
+    getMonsters: state.userState.users,
+    getSearchValue: state.userState.searchValue
+  } 
+)
+// Object is going to be returned to App Component 
+// from mapStateProps function which is acting as
+// call back function inside connect HOC[Higher Order Component]
+
+const mapDisptachToProps = (dispatch) => (
+  {
+    sendMonsters: monsters => dispatch(getUsers(monsters)),
+    sendSearchValue: username => dispatch(searchUser(username)) 
+  }
+)
+
+// Object is going to be returned to App Component 
+// from mapStateProps function which is acting as
+// call back function inside connect HOC[Higher Order Component]
+export default connect(mapStateToProps, mapDisptachToProps)(App)
